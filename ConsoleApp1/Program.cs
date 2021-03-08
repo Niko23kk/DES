@@ -77,19 +77,35 @@ namespace ConsoleApp1
         static void Main(string[] args)
         {
             string message = "Nikolaenkov Alexsey Olegovich";
-            string key = "YUIOPW}";
+            string[] key = { "YUIOPW}" ,"ALex.1n","'sd%rq("};
+            string[] decodekey = new string[key.Length];
 
-            string decodeKey = ExtendKey(GetBitByByte(key));
+            for (int i = 0; i < key.Length; i++)
+            {
+                decodekey[i] = ExtendKey(GetBitByByte(key[i]));
+            }
 
-            string code = Encode(message, key);
+            string code=message;
+
+            for (int i = 0; i < key.Length; i++)
+            {
+                code = Encode(code, key[i], i % 2);
+            }
+
             Console.WriteLine(code+"\n");
 
-            string newmessage = Decode(code, decodeKey);
+            string newmessage = code;
+
+            for (int i = 0; i < decodekey.Length; i++)
+            {
+                newmessage = Decode(newmessage, decodekey[decodekey.Length - 1 - i], (i + 1) % 2);
+            }
+
             Console.WriteLine(newmessage+"\n");
 
         }
 
-        public static string Encode(string message, string key)
+        public static string Encode(string message, string key,int orderkey)
         {
             string bitmessage = GetBitByByte(message);
             string bitkey = GetBitByByte(key);
@@ -132,14 +148,23 @@ namespace ConsoleApp1
                 {
                     char[] saveright = right;
 
-                    CKey = LeftShift(CKey, ShiftKey[round]);
-                    DKey = LeftShift(DKey, ShiftKey[round]);
+                    if (orderkey == 1)
+                    {
+                        CKey = LeftShift(CKey, ShiftKey[round]);
+                        DKey = LeftShift(DKey, ShiftKey[round]);
+                    }
 
                     right = FBlock(right, new string(CKey + DKey));
 
                     char[] save = left;
                     left = saveright;
                     right = XOR(right, save);
+
+                    if (orderkey == 0)
+                    {
+                        CKey = RightShift(CKey, ShiftKey[15 - round]);
+                        DKey = RightShift(DKey, ShiftKey[15 - round]);
+                    }
                 }
 
                 permutation = EndPermutationFunc((new string(left) + new string(right)).ToCharArray());
@@ -154,7 +179,7 @@ namespace ConsoleApp1
             return new string(result);
         }
 
-        public static string Decode(string code,string key)
+        public static string Decode(string code,string key,int orderkey)
         {
             string bitmessage = GetBitByByte(code);
             key = new string(KeyPermutationFunc(key.ToCharArray()));
@@ -177,13 +202,22 @@ namespace ConsoleApp1
                 {
                     char[] saveleft = left;
 
+                    if (orderkey == 1)
+                    {
+                        CKey = LeftShift(CKey, ShiftKey[round]);
+                        DKey = LeftShift(DKey, ShiftKey[round]);
+                    }
+
                     left = FBlock(left, new string(CKey + DKey));
 
                     left = XOR(left, right);
                     right = saveleft;
 
-                    CKey = RightShift(CKey, ShiftKey[15 - round]);
-                    DKey = RightShift(DKey, ShiftKey[15 - round]);
+                    if (orderkey == 0)
+                    {
+                        CKey = RightShift(CKey, ShiftKey[15 - round]);
+                        DKey = RightShift(DKey, ShiftKey[15 - round]);
+                    }
                 }
 
                 permutation = EndPermutationFunc((new string(left) + new string(right)).ToCharArray());
@@ -325,56 +359,6 @@ namespace ConsoleApp1
             }
             return permutation;
         }
-
-        //public static char[] ExtendPermutationFunc(char[] array)
-        //{
-        //    int bias = 0;
-        //    int order = 0;
-        //    char[] extendPermuntation = new char[48];
-        //    for (int i = 1; i < array.Length - 1; i++)
-        //    {
-        //        switch (order)
-        //        {
-        //            case 0:
-        //                {
-        //                    extendPermuntation[i + 1 + bias] = array[i];
-        //                    order++;
-        //                    break;
-        //                }
-
-        //            case 1:
-        //                {
-        //                    extendPermuntation[i + 1 + bias] = array[i];
-        //                    order++;
-        //                    break;
-        //                }
-
-        //            case 2:
-        //                {
-        //                    extendPermuntation[i + 1 + bias] = array[i];
-        //                    extendPermuntation[i + 3 + bias] = array[i];
-        //                    order++;
-        //                    break;
-        //                }
-
-        //            case 3:
-        //                {
-        //                    extendPermuntation[i + 1 + bias] = array[i];
-        //                    extendPermuntation[i + 3 + bias] = array[i];
-        //                    order = 0;
-        //                    bias += 2;
-        //                    break;
-        //                }
-        //        }
-        //    }
-
-        //    extendPermuntation[0] = array[array.Length - 1];
-        //    extendPermuntation[1] = array[0];
-        //    extendPermuntation[extendPermuntation.Length - 2] = array[31];
-        //    extendPermuntation[extendPermuntation.Length - 1] = array[0];
-
-        //    return extendPermuntation;
-        //}
 
         public static int BitToInt(char[] array)
         {
